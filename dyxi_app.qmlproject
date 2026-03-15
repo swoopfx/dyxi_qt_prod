@@ -1,0 +1,43 @@
+import QmlProject 1.1
+
+Project {
+    mainFile: "main.qml"
+
+    /* Include all QML files */
+    importPaths: [ "pages", "components" ]
+
+    /* Add all QML files to the project */
+    QmlFiles {
+        directory: "."
+        recursive: true
+    }
+
+    /* Add images */
+    Files {
+        directory: "assets"
+        filter: "*.png"
+        recursive: true
+    }
+    Files {
+        directory: "assets"
+        filter: "*.jpg"
+        recursive: true
+    }
+
+    /* Add sounds */
+    Files {
+        directory: "assets"
+        filter: "*.wav"
+        recursive: true
+    }
+    Files {
+        directory: "assets"
+        filter: "*.mp3"
+        recursive: true
+    }
+
+    /* Target display configuration for tablet landscape */
+    Environment {
+        QT_QUICK_CONTROLS_STYLE: "Material"
+    }
+}

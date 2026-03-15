@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/logo.png</file>
+        <file>assets/images/background.jpg</file>
+        <file>assets/images/edu_icon.png</file>
+        <file>assets/images/game_icon.png</file>
+        <file>assets/images/puzzle_icon.png</file>
+    </qresource>
+</RCC>
