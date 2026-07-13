@@ -1,0 +1,63 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(QtOAuthClientIOS VERSION 1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Discover Qt 6 components
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Network NetworkAuth)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# Setup executable target
+add_executable(QtOAuthClientIOS
+    main.cpp
+    authservice.h
+    authservice.cpp
+    resources.qrc
+)
+
+if(IOS)
+    # Define custom property values targeting iPad/iOS screens
+    set_target_properties(QtOAuthClientIOS PROPERTIES
+        # Generates a standard Apple plist-based bundle payload instead of a raw binary executable
+        MACOSX_BUNDLE TRUE
+        
+        # Specify the exact path to our custom Info.plist file mapped to the target structure
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
+        
+        # KEY SETTING FOR TABLET: 
+        # 1: iPhone, 2: iPad (Tablet), 1,2: Universal (both iPhone and iPad)
+        # We explicitly configure '2' and '1,2' to fully support elegant high-contrast tablet configurations.
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "2"
+        
+        # Force specific rendering capabilities for iPad devices (multitasking split overlays support)
+        XCODE_ATTRIBUTE_UISupportedInterfaceOrientations "UIInterfaceOrientationPortrait,UIInterfaceOrientationPortraitUpsideDown,UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
+        
+        # Set Apple Keychain Access Groups entitlements path
+        # Required because iOS isolates user keychains. Keyrings require code sign team identifiers
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/ios/Entitlements.plist"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "ABC123XYZ4"
+    )
+    
+    # iOS C++ target definitions
+    target_compile_definitions(QtOAuthClientIOS PRIVATE IOS_TABLET_PLATFORM=1)
+endif()
+
+# Link framework models
+target_link_libraries(QtOAuthClientIOS PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::Network
+    Qt6::NetworkAuth
+)
+
+# Bind iOS static build configuration of keychain safe wrapper libraries
+find_package(qtkeychain REQUIRED)
+target_link_libraries(QtOAuthClientIOS PRIVATE qtkeychain)

@@ -1,0 +1,56 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(QtOAuthClientAndroid VERSION 1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Configure Qt 6 component modules
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick Network NetworkAuth)
+
+# Ensure automatic code generation is configured
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# Android Native Development Kit (NDK) deployment parameters
+if(ANDROID)
+    # Define directory holding native android files like AndroidManifest.xml, icons, resources and assets
+    set_target_properties(QtOAuthClientAndroid PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+    )
+
+    # Compile-time overrides to align network handshake loops inside Android permissions structure
+    add_compile_definitions(QT_OAUTH_MOBILE_BUILD=1)
+    
+    # Identify target architecture toolchain mapping
+    message(STATUS "Integrating security schemas on Android target ABI: ${ANDROID_ABI}")
+endif()
+
+# Pull in local applet codebase
+add_executable(QtOAuthClientAndroid
+    main.cpp
+    authservice.h
+    authservice.cpp
+    resources.qrc
+)
+
+# Crucial: On mobile devices, loopback server setups cannot listen to static loopback configurations 
+# in the same way desktops do. Instead, dynamic deep-linked URLs are processed natively or redirected 
+# through external mobile gateway handlers.
+target_compile_definitions(QtOAuthClientAndroid PRIVATE ANDROID_MOBILE_PLATFORM=1)
+
+# Link platform libraries for clean runtime executions
+target_link_libraries(QtOAuthClientAndroid PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::Network
+    Qt6::NetworkAuth
+)
+
+# Support linkage of third-party Android QtKeychain wrapper builds 
+# QtKeychain is compiled relative to mobile architectures (armeabi-v7a, arm64-v8a)
+find_package(qtkeychain REQUIRED)
+target_link_libraries(QtOAuthClientAndroid PRIVATE qtkeychain)
