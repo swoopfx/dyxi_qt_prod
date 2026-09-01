@@ -1,67 +1,53 @@
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import "pages"
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
-Window {
-    id: window
-    width: 1280
-    height: 800
+// import QtCredentialsClient
+
+ApplicationWindow {
+    id: appWindow
     visible: true
-    title: "DYXI - Kids Education Game"
-    color: "#F0F9FF"
 
-    // Dyslexia-friendly: use a high-readability font if available
-    // font.family: "OpenDyslexic"
+    // LoginMain {}
+    // Button {
+    //     onClicked: {
+    //         stackView.push("qrc:/modules/oauth/LoginMainqml");
+    //     }
+    // }
+    contentOrientation: Qt.LandscapeOrientation
+
+    // StackView {
+    //     id: stackView
+    //     anchors.fill: parent
+    //     initialItem: "qrc:/ui/UIModule/Pages/WelcomePage.qml" // Relative path to the file
+    // }
 
     StackView {
-        id: pageStack
-        anchors.fill: parent
-        initialItem: "pages/LoginPage.qml"
-
-        // Custom transitions for ADHD: smooth but not distracting
-        pushEnter: Transition {
-            PropertyAnimation {
-                property: "opacity"
-                from: 0; to: 1
-                duration: 400
-            }
-            PropertyAnimation {
-                property: "x"
-                from: window.width; to: 0
-                duration: 400
-                easing.type: Easing.OutQuad
+        id: stackView
+        anchors.fill: parent /* * Default page while PageRouter restores the * authentication session. */
+        initialItem: "qrc:/ui/UIModule/Pages/WelcomePage.qml"
+        Connections {
+            target: pageRouter
+            function onCurrentPageChanged() {
+                if (!pageRouter.currentPage)
+                    return;
+                console.log("[PageRouter] Loading:", pageRouter.currentPage); /* * Replace the current root page. * * This prevents users from pressing Back * and returning to WelcomePage after login. */ stackView.replace(pageRouter.currentPage);
             }
         }
+    }
+    Component.onCompleted: {
+        console.log("[main.qml] Starting PageRouter...");
+        pageRouter.initialize();
+    }
 
-        pushExit: Transition {
-            PropertyAnimation {
-                property: "opacity"
-                from: 1; to: 0
-                duration: 400
-            }
-        }
-
-        popEnter: Transition {
-            PropertyAnimation {
-                property: "opacity"
-                from: 0; to: 1
-                duration: 400
-            }
-        }
-
-        popExit: Transition {
-            PropertyAnimation {
-                property: "opacity"
-                from: 1; to: 0
-                duration: 400
-            }
-            PropertyAnimation {
-                property: "x"
-                from: 0; to: window.width
-                duration: 400
-                easing.type: Easing.OutQuad
-            }
+    onClosing: function (closeEvent) {
+        if (stackView.depth > 1) {
+            // We are deeper in the stack; go back one screen
+            stackView.pop();
+            closeEvent.accepted = false; // Prevent the app from closing
+        } else {
+            // We are on the root view; let the app close normally
+            closeEvent.accepted = true;
         }
     }
 }

@@ -18,7 +18,7 @@ Item {
             // Top Status Header row
             RowLayout {
                 Layout.fillWidth: true
-
+                
                 Rectangle {
                     width: 32
                     height: 32
@@ -120,53 +120,23 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Label {
-                            text: "OS Hardware Token Lock:"
-                            color: "#64748b"
-                            font.pixelSize: 10
-                        }
+                        Label { text: "OS Hardware Token Lock:"; color: "#64748b"; font.pixelSize: 10 }
                         Rectangle {
-                            width: 8
-                            height: 8
-                            radius: 4
-                            color: "#10b981"
+                            width: 8; height: 8; radius: 4; color: "#10b981"
                         }
-                        Label {
-                            text: "Protected via QtKeychain"
-                            color: "#10b981"
-                            font.bold: true
-                            font.pixelSize: 10
-                        }
+                        Label { text: "Protected via QtKeychain"; color: "#10b981"; font.bold: true; font.pixelSize: 10 }
                     }
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Label {
-                            text: "System Domain Scope:"
-                            color: "#64748b"
-                            font.pixelSize: 10
-                        }
-                        Label {
-                            text: "api.enterprise-security.internal"
-                            color: "#cbd5e1"
-                            font.family: "Courier"
-                            font.pixelSize: 10
-                        }
+                        Label { text: "System Domain Scope:"; color: "#64748b"; font.pixelSize: 10 }
+                        Label { text: "api.enterprise-security.internal"; color: "#cbd5e1"; font.family: "Courier"; font.pixelSize: 9.5 }
                     }
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Label {
-                            text: "Active Token Stream:"
-                            color: "#64748b"
-                            font.pixelSize: 10
-                        }
-                        Label {
-                            text: "session_auth_token [AES Encrypted]"
-                            color: "#fbbf24"
-                            font.pixelSize: 10
-                            font.bold: true
-                        }
+                        Label { text: "Active Token Stream:"; color: "#64748b"; font.pixelSize: 10 }
+                        Label { text: "session_auth_token [AES Encrypted]"; color: "#fbbf24"; font.pixelSize: 9.5; font.bold: true }
                     }
                 }
             }
@@ -180,13 +150,13 @@ Item {
                     id: auditBtn
                     Layout.fillWidth: true
                     height: 38
-
+                    
                     background: Rectangle {
                         color: auditBtn.pressed ? "#1e293b" : "#111827"
                         border.color: "#374151"
                         radius: 8
                     }
-
+                    
                     contentItem: Label {
                         text: qsTr("🛡️ Audit Keyring Security Rules")
                         color: "#cbd5e1"
@@ -196,8 +166,8 @@ Item {
                     }
 
                     onClicked: {
-                        authService.rawLog("🔍 QKeychain::ReadPasswordJob: Security manual Audit executed inside the operating system keychain wrapper...", "success");
-                        authService.rawLog("🛡️ Matching SHA-256 signatures against secure credentials space.", "info");
+                        authService.rawLog("🔍 QKeychain::ReadPasswordJob: Security manual Audit executed inside the operating system keychain wrapper...", "success")
+                        authService.rawLog("🛡️ Matching SHA-256 signatures against secure credentials space.", "info")
                     }
                 }
 
@@ -205,13 +175,13 @@ Item {
                     id: profileBtn
                     Layout.fillWidth: true
                     height: 38
-
+                    
                     background: Rectangle {
                         color: profileBtn.pressed ? "#064e3b" : "#022c22"
                         border.color: "#047857"
                         radius: 8
                     }
-
+                    
                     contentItem: Label {
                         text: qsTr("🔄 Fetch User Profile (fetchUserProfile)")
                         color: "#6ee7b7"
@@ -221,7 +191,7 @@ Item {
                     }
 
                     onClicked: {
-                        authService.fetchUserProfile();
+                        authService.fetchUserProfile()
                     }
                 }
 
@@ -229,12 +199,12 @@ Item {
                     id: signOutBtn
                     Layout.fillWidth: true
                     height: 42
-
+                    
                     background: Rectangle {
                         color: signOutBtn.pressed ? "#450a0a" : "#1e1b4b"
                         radius: 8
                     }
-
+                    
                     contentItem: Label {
                         text: qsTr("Disconnect Safe Session & Clear Keyrings")
                         color: "#fca5a5"
@@ -242,9 +212,9 @@ Item {
                         font.pixelSize: 11
                         horizontalAlignment: Text.AlignHCenter
                     }
-
+                    
                     onClicked: {
-                        authService.signOut();
+                        authService.signOut()
                     }
                 }
             }

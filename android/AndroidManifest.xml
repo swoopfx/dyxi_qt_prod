@@ -1,0 +1,44 @@
+<?xml version='1.0'?>
+<manifest android:installLocation="auto" android:versionCode="-- %%INSERT_VERSION_CODE%% --" android:versionName="-- %%INSERT_VERSION_NAME%% --" package="org.qtproject.oruladyxiprod" xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- %%INSERT_PERMISSIONS -->
+    <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:smallScreens="true"/>
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <!--%%INSERT_FEATURES-->
+    <application android:allowBackup="true" android:enableOnBackInvokedCallback="false" android:fullBackupOnly="false" android:hardwareAccelerated="true" android:icon="@drawable/icon" android:label="-- %%INSERT_APP_NAME%% --" android:name="org.qtproject.qt.android.bindings.QtApplication" android:theme="@style/splashScreenTheme">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:exported="true" android:icon="@drawable/logo" android:label="-- %%INSERT_APP_NAME%% --" android:launchMode="singleTop" android:name="org.qtproject.qt.android.bindings.QtActivity" android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <!--   <data android:host="org.qtproject.oruladyxiprod" android:path="/auth/ipa/google-oauh"/>android:scheme="https"/>-->
+              <!--  <data android:host="api.dyxi.site" android:path="/auth/ipa/google-oauh" android:scheme="https"/>-->
+            </intent-filter>
+
+<intent-filter android:autoVerify="true">
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.DEFAULT" />
+      <category android:name="android.intent.category.BROWSABLE" />
+
+      <data
+          android:scheme="https"
+          android:host="api.dyxi.site"
+          android:path="/oauth/android/callback" />
+  </intent-filter>
+            <meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
+            <meta-data android:name="android.app.arguments" android:value="-- %%INSERT_APP_ARGUMENTS%% --"/>
+            <meta-data android:name="android.app.splash_screen_drawable" android:resource="@drawable/splashscreen"/>
+        </activity>
+        <provider android:authorities="${applicationId}.qtprovider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/qtprovider_paths"/>
+        </provider>
+    </application>
+</manifest>

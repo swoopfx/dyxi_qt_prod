@@ -63,8 +63,8 @@ signals:
 
 
 public:
-   QString appName=QStringLiteral("MVP Dyxi");
-   QString companyName = QStringLiteral("Orula Deviant");
+   QString appName=QStringLiteral("Dyxi");
+   QString companyName = QStringLiteral("Orula Deviant Limited");
     QString organisationDomain = QStringLiteral("https://dyxi.site");
 
 
@@ -72,7 +72,7 @@ public:
 
 
     // Endpoints
-    QString baseUrl=QStringLiteral("https://mvp.dyxi.site");
+    QString baseUrl=QStringLiteral("https://api.dyxi.site");
     const QString dyxiApiLogin = baseUrl+QStringLiteral("/api/login");
     const QString dyxiApiregistration = baseUrl+ QStringLiteral("/api/register");
 
