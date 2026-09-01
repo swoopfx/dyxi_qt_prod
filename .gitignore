@@ -81,3 +81,4 @@ CMakeLists.txt.user*
 .uic/
 /build*/
 models/*
+android/assets/moonshine/uncached_decode.int8.onnx

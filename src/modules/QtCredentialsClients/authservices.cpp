@@ -432,6 +432,7 @@ void AuthServices::sendGoogleAuthorizationCode(const QString &code,
     payload.insert(QStringLiteral("redirect_uri"), redirectUri);
     payload.insert(QStringLiteral("code_verifier"), codeVerifier);
     payload.insert(QStringLiteral("nonce"), nonce);
+    payload.insert(QStringLiteral("client"), "mobile");
 
     QNetworkReply *reply = m_networkManager->post(
         request, QJsonDocument(payload).toJson(QJsonDocument::Compact));
