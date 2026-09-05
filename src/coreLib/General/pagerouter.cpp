@@ -1,3 +1,4 @@
+
 #include "pagerouter.h"
 
 #include <QDebug>
@@ -41,11 +42,6 @@ PageRouter::PageRouter(QObject *parent)
         this,
         &PageRouter::onLogoutCompleted
         );
-}
-
-PageRouter::~PageRouter()
-{
-
 }
 
 

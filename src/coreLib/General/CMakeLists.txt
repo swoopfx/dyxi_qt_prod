@@ -48,6 +48,7 @@ qt_add_qml_module(General
   SOURCES sherpa2/modelextractoronnx.h sherpa2/modelextractoronnx.cpp
   SOURCES wardprofile.h wardprofile.cpp
   SOURCES pagerouter.h pagerouter.cpp
+  SOURCES sessionmanager.h sessionmanager.cpp
 )
 
 target_link_libraries(General

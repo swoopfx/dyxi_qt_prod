@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVariant>
 #include <QMap>
+
 #include "authservices.h"
 #include "wardprofile.h"
 
@@ -32,7 +33,6 @@
 
 public:
     explicit PageRouter(QObject *parent = nullptr);
-     ~PageRouter();
 
     bool isInitialized() const;
     bool isRouting() const;

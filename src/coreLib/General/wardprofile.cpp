@@ -6,6 +6,21 @@ WardProfile::WardProfile(QObject *parent)
 {
 }
 
+QVariant WardProfile::curriculumId() const
+{
+    QSettings &mutableSettings =
+        const_cast<QSettings&>(settings);
+
+    mutableSettings.beginGroup(groupName);
+
+    QVariant value =
+        mutableSettings.value(keyCurriculumId);
+
+    mutableSettings.endGroup();
+
+    return value;
+}
+
 // Validates that types match constraints and keys exist
 bool WardProfile::validateData(const QMap<QString, QVariant> &data) const
 {

@@ -8,6 +8,8 @@
 #include <QUrlQuery>
 #include <QRegularExpression>
 #include <QStringLiteral>
+#include <QDateTime>
+#include "sessionmanager.h"
 #include <QDebug>
 
 #include <qtkeychain/keychain.h>
@@ -152,6 +154,10 @@ void AuthServices::loginWithPasswordBackend(
 
     payload["username"] = username;
     payload["password"] = password;
+    payload["user_agent"] = "mobile";
+    payload["client"] = "mobile";
+    payload["user_ip"] = "127.0.0.1";
+    payload["remember_me"]= true;
 
     const QByteArray body =
         QJsonDocument(payload).toJson(
@@ -248,9 +254,12 @@ bool AuthServices::parseTokenResponse(
 
     const QJsonObject root =
         document.object();
+   result.success = root.value("success").toBool(false);
+    result.schema =
+        root.value("schema").toString();
 
     result.accessToken =
-        root.value("access_token")
+        root.value("token")
             .toString();
 
     result.refreshToken =
@@ -265,8 +274,20 @@ bool AuthServices::parseTokenResponse(
         root.value("user")
             .toObject();
 
+    // result.userId =
+    //     user.value("id").toString();
+
+    // result.username =
+    //     user.value("username").toString();
+
+    // result.email =
+    //     user.value("email").toString();
+
+    // result.displayName =
+    //     user.value("display_name").toString();
+
     result.userId =
-        user.value("id").toString();
+        user.value("uuid").toString();
 
     result.username =
         user.value("username").toString();
@@ -275,7 +296,7 @@ bool AuthServices::parseTokenResponse(
         user.value("email").toString();
 
     result.displayName =
-        user.value("display_name").toString();
+        user.value("fullname").toString();
 
     if (result.accessToken.isEmpty())
         return false;
@@ -283,57 +304,53 @@ bool AuthServices::parseTokenResponse(
     return true;
 }
 
-void AuthServices::applyTokenResponse(
-    const TokenResponse &response)
+void AuthServices::applyTokenResponse(const TokenResponse &response)
 {
     if (!response.isValid()) {
         emit errorOccurred(
             "Authentication server did not return an access token.");
-
         return;
     }
 
-    m_sessionToken =
-        response.accessToken;
+    m_sessionToken = response.accessToken;
+
 
     if (!response.refreshToken.isEmpty()) {
-        m_refreshToken =
-            response.refreshToken;
+        m_refreshToken = response.refreshToken;
     }
 
-    m_tokenExpiresIn =
-        response.expiresIn;
+    m_tokenExpiresIn = response.expiresIn;
+    m_userId         = response.userId;
+    m_userName       = response.username;
+    m_userEmail      = response.email;
+    m_displayName    = response.displayName;
 
-    m_userId =
-        response.userId;
-
-    m_userName =
-        response.username;
-
-    m_userEmail =
-        response.email;
-
-    m_displayName =
-        response.displayName;
-
-    saveTokenSecurely(
-        m_sessionToken);
+    saveTokenSecurely(m_sessionToken);
 
     if (!m_refreshToken.isEmpty()) {
-        saveRefreshTokenSecurely(
-            m_refreshToken);
+        saveRefreshTokenSecurely(m_refreshToken);
     }
 
     setSignedIn(true);
     setBusy(false);
+    setStatusText("Signed in successfully");
 
-    setStatusText(
-        "Signed in successfully");
+    const QDateTime expirationDateTime =
+        QDateTime::currentDateTime().addSecs(response.expiresIn);
+
+    UserSessionx newSession;
+    newSession.uuid = m_userId;
+    newSession.fullName = m_displayName;
+    newSession.email = m_userEmail;
+    newSession.expirationTime = expirationDateTime;
+    newSession.isValid = true;
+
+    SessionManager manager;
+    manager.saveSession(newSession);
 
     emit profileUpdated();
     emit loginSuccess();
 }
-
 
 void AuthServices::loginWithGoogle()
 {
@@ -785,6 +802,7 @@ void AuthServices::saveTokenSecurely(
     if (token.isEmpty())
         return;
 
+
     auto *job =
         new QKeychain::WritePasswordJob(
             QStringLiteral(
@@ -804,7 +822,7 @@ void AuthServices::saveTokenSecurely(
         [this, job]() {
 
             if (job->error()) {
-
+  qDebug() << "Access Token :" << "token failed";
                 emit rawLog(
                     "Failed to store access token: " +
                         job->errorString(),
@@ -814,7 +832,7 @@ void AuthServices::saveTokenSecurely(
                     "Secure token storage failed.");
 
             } else {
-
+                qDebug() << "Access Token :" << "token ritten";
                 emit rawLog(
                     "Application access token stored securely.",
                     "success");
@@ -902,6 +920,8 @@ bool AuthServices::checkSavedSession()
 
             const QString token =
                 job->textData();
+
+             qDebug() << "Access Token :" << job->textData();
 
             if (!failed &&
                 !token.isEmpty()) {
@@ -1057,6 +1077,32 @@ void AuthServices::fetchUserProfile()
         return;
     }
 
+    SessionManager sessionManager;
+    qDebug() << "Session Data" << sessionManager.isSessionExpired();
+    if(!sessionManager.isSessionExpired()){
+
+        UserSessionx sessionData = sessionManager.loadSession();
+
+        m_userId =  sessionData.uuid;
+
+        m_userName = sessionData.fullName;
+
+        m_userEmail = sessionData.email;
+
+        m_displayName = sessionData.fullName;
+
+        qDebug() << "Session Data" << sessionData.uuid;
+
+        setSignedIn(true);
+
+        setStatusText(
+            "Session restored");
+
+        emit profileUpdated();
+        emit loginSuccess();
+
+    }else{
+
     QUrl url(
         QString(kAuthBaseUrl) +
         QString(kMeEndpoint));
@@ -1074,6 +1120,7 @@ void AuthServices::fetchUserProfile()
         [this, reply]() {
             handleProfileReply(reply);
         });
+    }
 }
 
 void AuthServices::handleProfileReply(
@@ -1261,6 +1308,8 @@ void AuthServices::handleRefreshReply(
 
 void AuthServices::signOut()
 {
+     SessionManager manager;
+    manager.clearSession();
     const QString refreshToken =
         m_refreshToken;
 

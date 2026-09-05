@@ -49,6 +49,8 @@ qt_add_qml_module(UIModule
    QML_FILES Pages/LoginPageNew.qml
    QML_FILES Pages/Tiles.qml
    QML_FILES Pages/StartEvaluation.qml
+   QML_FILES Pages/Curriculum.qml
+   QML_FILES Pages/StartCurriculum.qml
 
 
 )

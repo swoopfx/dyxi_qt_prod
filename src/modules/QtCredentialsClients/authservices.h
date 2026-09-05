@@ -122,18 +122,27 @@ private:
 
     struct TokenResponse
     {
-        QString accessToken;
-        QString refreshToken;
-        int expiresIn = 0;
+        bool success = false;
 
-        QString userId;
-        QString username;
-        QString email;
-        QString displayName;
+        QString schema;          // "Bearer"
+
+        QString accessToken;    // token
+        QString refreshToken;   // refresh_token
+        int expiresIn = 0;      // expires_in
+
+        QString luhnToken;      // luhn_token
+
+        // User information
+        QString userId;         // user.uuid
+        QString username;       // user.username
+        QString email;          // user.email
+        QString displayName;    // user.fullname
 
         bool isValid() const
         {
-            return !accessToken.isEmpty();
+            return success &&
+                   !accessToken.isEmpty() &&
+                   !userId.isEmpty();
         }
     };
 

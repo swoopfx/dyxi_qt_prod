@@ -15,9 +15,9 @@ Page {
         }
 
         function onAuthStateChanged() {
-            console.log("Authentication state changed:", authservice.isSignedIn);
+            console.log("Authentication state changed:", authService.isSignedIn);
 
-            if (!authservice.isSignedIn) {
+            if (!authService.isSignedIn) {
                 loader.sourceComponent = loginComponent;
             }
         }
@@ -44,7 +44,11 @@ Page {
     Component {
         id: welcomeComponent
 
-        WelcomePage {}
+        Item {
+            Component.onCompleted: {
+                stackView.replace("qrc:/ui/UIModule/Pages/WelcomePage.qml");
+            }
+        }
     }
 
     Component {

@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    anchors.fill: parent
+    // anchors.fill: parent
 
     property int selectedChildIndex: -1
 
@@ -155,7 +155,7 @@ Item {
                         Layout.preferredWidth: 78
                         Layout.preferredHeight: 52
 
-                        source: "images/dyxi_logo.png"
+                        source: "qrc:/ui/images/dyxi_logo_42.png"
 
                         fillMode: Image.PreserveAspectFit
 

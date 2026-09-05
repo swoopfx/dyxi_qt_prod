@@ -18,6 +18,9 @@ public:
     explicit WardProfile(QObject *parent = nullptr);
 
 
+
+    Q_INVOKABLE QVariant curriculumId() const;
+
     // CRUD & Substitution Operations
     bool createProfile(const QMap<QString, QVariant> &data);
     QMap<QString, QVariant> readProfile() const;

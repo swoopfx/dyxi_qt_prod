@@ -42,8 +42,10 @@ target_link_libraries(QtCredentialsClients PRIVATE
     Qt6::Quick
     Qt6::Network
     Qt6::NetworkAuth
-	qt6keychain
+    qt6keychain
 )
+
+target_include_directories(QtCredentialsClients PUBLIC ${CMAKE_SOURCE_DIR}/src/coreLib/General)
 
 # Support linkage of modern QtKeychain keyring wrapper packages
 #find_package(qtkeychain REQUIRED)
