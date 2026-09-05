@@ -49,6 +49,8 @@ qt_add_qml_module(General
   SOURCES wardprofile.h wardprofile.cpp
   SOURCES pagerouter.h pagerouter.cpp
   SOURCES sessionmanager.h sessionmanager.cpp
+  SOURCES network/wardnetworkaccess.h network/wardnetworkaccess.cpp
+
 )
 
 target_link_libraries(General

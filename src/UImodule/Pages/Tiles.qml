@@ -4,9 +4,17 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    // anchors.fill: parent
+
+    // ================================================================
+    // PROPERTIES
+    // ================================================================
 
     property int selectedChildIndex: -1
+
+    // Network state
+    property bool childrenLoading: true
+    property bool childrenLoaded: false
+    property string childrenError: ""
 
     // ================================================================
     // SIGNALS
@@ -17,21 +25,24 @@ Item {
     signal manageChildRequested(int childId)
     signal viewProgressRequested(int childId)
 
-    // Sent to C++ / ViewModel / backend
     signal childRegistrationSubmitted(string fullName, string dateOfBirth, string gender)
+
+    // ================================================================
+    // CHILD MODEL
+    // ================================================================
+
+    ListModel {
+        id: childrenModel
+    }
 
     // ================================================================
     // DATE HELPERS
     // ================================================================
 
-    // Current year.
     readonly property int currentYear: new Date().getFullYear()
 
-    // Child must be at least 1 years old.
     readonly property int youngestBirthYear: currentYear - 1
 
-    // Number of years to display.
-    // This gives a useful historical range.
     readonly property int birthYearCount: 15
 
     function monthNumber(monthIndex) {
@@ -73,44 +84,717 @@ Item {
     }
 
     // ================================================================
+    // LOAD CHILDREN
+    // ================================================================
+
+    function loadChildren() {
+        childrenLoading = true;
+        childrenLoaded = false;
+        childrenError = "";
+
+        childrenModel.clear();
+
+        /*
+         * Keep the Add Child tile in the GridView immediately.
+         */
+
+        childrenModel.append({
+            isAddChild: true,
+            childId: -1,
+            childName: "",
+            age: 0,
+            grade: "",
+            avatarColor: "",
+            avatarText: "",
+            progress: 0
+        });
+
+        /*
+         * C++:
+         *
+         * networkaccess.loadChildren()
+         */
+
+        networkaccess.loadChildren();
+    }
+
+    // ================================================================
+    // SERVER RESPONSE
+    // ================================================================
+
+    function showChildren(children) {
+        childrenModel.clear();
+
+        // ------------------------------------------------------------
+        // SERVER CHILDREN
+        // ------------------------------------------------------------
+
+        for (var i = 0; i < children.length; ++i) {
+            var child = children[i];
+
+            var name = child.childName || child.name || "Unknown";
+
+            childrenModel.append({
+                isAddChild: false,
+                childId: child.childId !== undefined ? child.childId : 0,
+                childName: name,
+                age: child.age !== undefined ? child.age : 0,
+                grade: child.grade !== undefined ? child.grade : "N/A",
+                avatarColor: child.avatarColor !== undefined ? child.avatarColor : "#E8E0FF",
+                avatarText: child.avatarText !== undefined ? child.avatarText : name.charAt(0).toUpperCase(),
+                progress: child.progress !== undefined ? child.progress : 0
+            });
+        }
+
+        // ------------------------------------------------------------
+        // ALWAYS ADD ADD-CHILD TILE LAST
+        // ------------------------------------------------------------
+
+        childrenModel.append({
+            isAddChild: true,
+            childId: -1,
+            childName: "",
+            age: 0,
+            grade: "",
+            avatarColor: "",
+            avatarText: "",
+            progress: 0
+        });
+
+        childrenLoading = false;
+        childrenLoaded = true;
+    }
+
+    // ================================================================
+    // NETWORK FAILURE
+    // ================================================================
+
+    function childrenLoadFailed(message) {
+        childrenLoading = false;
+        childrenLoaded = false;
+
+        childrenError = message && message.length > 0 ? message : "Unable to load children's profiles.";
+
+        /*
+         * Keep Add Child available even after failure.
+         */
+
+        childrenModel.clear();
+
+        childrenModel.append({
+            isAddChild: true,
+            childId: -1,
+            childName: "",
+            age: 0,
+            grade: "",
+            avatarColor: "",
+            avatarText: "",
+            progress: 0
+        });
+    }
+
+    // ================================================================
+    // C++ NETWORK CONNECTION
+    // ================================================================
+
+    Connections {
+
+        target: networkaccess
+
+        function onChildrenLoaded(children) {
+            root.showChildren(children);
+        }
+
+        function onChildrenLoadFailed(message) {
+            root.childrenLoadFailed(message);
+        }
+    }
+
+    // ================================================================
+    // INITIALIZATION
+    // ================================================================
+
+    Component.onCompleted: {
+        root.loadChildren();
+    }
+
+    // ================================================================
+    // GRID DELEGATE
+    // ================================================================
+
+    Component {
+        id: delegateComponent
+
+        Item {
+            id: delegateItem
+
+            width: childrenGridView.cellWidth
+
+            height: childrenGridView.cellHeight
+
+            // ========================================================
+            // ADD CHILD TILE
+            // ========================================================
+
+            Rectangle {
+                id: addChildTile
+
+                visible: isAddChild === true
+
+                anchors.fill: parent
+
+                anchors.margins: 6
+
+                radius: 17
+
+                color: "#FCFAFF"
+
+                border.color: "#D9D0FF"
+
+                border.width: 1
+
+                MouseArea {
+
+                    anchors.fill: parent
+
+                    cursorShape: Qt.PointingHandCursor
+
+                    onClicked: {
+                        root.addChildRequested();
+
+                        root.resetChildForm();
+
+                        addChildDialog.open();
+                    }
+                }
+
+                ColumnLayout {
+
+                    anchors.centerIn: parent
+
+                    spacing: 7
+
+                    Rectangle {
+
+                        Layout.alignment: Qt.AlignHCenter
+
+                        Layout.preferredWidth: 46
+
+                        Layout.preferredHeight: 46
+
+                        radius: 23
+
+                        color: "#EEE AFF".replace(" ", "")
+
+                        Label {
+
+                            anchors.centerIn: parent
+
+                            text: "+"
+
+                            color: "#7658DC"
+
+                            font.pixelSize: 25
+
+                            font.bold: true
+                        }
+                    }
+
+                    Label {
+
+                        text: "Add Child"
+
+                        color: "#634AC9"
+
+                        font.pixelSize: 12
+
+                        font.bold: true
+
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+
+                    Label {
+
+                        text: "Register another\nchild profile"
+
+                        color: "#929BB0"
+
+                        font.pixelSize: 9
+
+                        horizontalAlignment: Text.AlignHCenter
+
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
+
+            // ========================================================
+            // LOADING SKELETON
+            // ========================================================
+
+            Rectangle {
+                id: loadingCard
+
+                visible: root.childrenLoading && isAddChild !== true
+
+                anchors.fill: parent
+
+                anchors.margins: 6
+
+                radius: 17
+
+                color: "#FFFFFF"
+
+                border.color: "#E7EAF2"
+
+                border.width: 1
+
+                ColumnLayout {
+
+                    anchors.fill: parent
+
+                    anchors.margins: 13
+
+                    spacing: 10
+
+                    // Avatar skeleton
+
+                    Rectangle {
+
+                        Layout.preferredWidth: 56
+                        Layout.preferredHeight: 56
+
+                        radius: 28
+
+                        color: "#EEF0F6"
+
+                        SequentialAnimation on opacity {
+
+                            loops: Animation.Infinite
+
+                            NumberAnimation {
+                                to: 0.45
+                                duration: 700
+                            }
+
+                            NumberAnimation {
+                                to: 1.0
+                                duration: 700
+                            }
+                        }
+                    }
+
+                    // Name skeleton
+
+                    Rectangle {
+
+                        Layout.fillWidth: true
+
+                        height: 14
+
+                        radius: 7
+
+                        color: "#EEF0F6"
+                    }
+
+                    // Details skeleton
+
+                    Rectangle {
+
+                        Layout.preferredWidth: 110
+
+                        height: 10
+
+                        radius: 5
+
+                        color: "#F1F2F6"
+                    }
+
+                    // Status skeleton
+
+                    Rectangle {
+
+                        width: 52
+
+                        height: 18
+
+                        radius: 9
+
+                        color: "#EEF0F6"
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    // Progress skeleton
+
+                    Rectangle {
+
+                        Layout.fillWidth: true
+
+                        height: 7
+
+                        radius: 3.5
+
+                        color: "#ECEEF4"
+                    }
+
+                    Rectangle {
+
+                        Layout.fillWidth: true
+
+                        height: 34
+
+                        radius: 9
+
+                        color: "#F1F2F7"
+                    }
+                }
+            }
+
+            // ========================================================
+            // CHILD CARD
+            // ========================================================
+
+            Rectangle {
+                id: childTile
+
+                visible: !root.childrenLoading && isAddChild !== true
+
+                anchors.fill: parent
+
+                anchors.margins: 6
+
+                radius: 17
+
+                color: "#FFFFFF"
+
+                border.color: root.selectedChildIndex === index ? "#8A6CFF" : "#E4E8F2"
+
+                border.width: root.selectedChildIndex === index ? 2 : 1
+
+                MouseArea {
+
+                    anchors.fill: parent
+
+                    cursorShape: Qt.PointingHandCursor
+
+                    onClicked: {
+                        root.selectedChildIndex = index;
+
+                        root.childSelected(childId, childName);
+                    }
+                }
+
+                ColumnLayout {
+
+                    anchors.fill: parent
+
+                    anchors.margins: 13
+
+                    spacing: 6
+
+                    // =================================================
+                    // AVATAR
+                    // =================================================
+
+                    RowLayout {
+
+                        Layout.fillWidth: true
+
+                        Rectangle {
+
+                            Layout.preferredWidth: 56
+                            Layout.preferredHeight: 56
+
+                            radius: 28
+
+                            color: avatarColor
+
+                            Label {
+
+                                anchors.centerIn: parent
+
+                                text: avatarText
+
+                                color: "#4F4770"
+
+                                font.pixelSize: 22
+
+                                font.bold: true
+                            }
+
+                            Rectangle {
+
+                                width: 12
+                                height: 12
+
+                                radius: 6
+
+                                color: "#48C985"
+
+                                border.color: "#FFFFFF"
+
+                                border.width: 2
+
+                                anchors.right: parent.right
+
+                                anchors.bottom: parent.bottom
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Button {
+
+                            Layout.preferredWidth: 28
+
+                            Layout.preferredHeight: 28
+
+                            background: Rectangle {
+
+                                radius: 8
+
+                                color: "#F6F4FF"
+                            }
+
+                            contentItem: Label {
+
+                                text: "⋮"
+
+                                color: "#7660D9"
+
+                                font.pixelSize: 17
+
+                                horizontalAlignment: Text.AlignHCenter
+
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            onClicked: {
+                                root.manageChildRequested(childId);
+                            }
+                        }
+                    }
+
+                    // =================================================
+                    // NAME
+                    // =================================================
+
+                    Label {
+
+                        text: childName
+
+                        color: "#202D50"
+
+                        font.pixelSize: 13
+
+                        font.bold: true
+
+                        Layout.fillWidth: true
+
+                        elide: Text.ElideRight
+                    }
+
+                    // =================================================
+                    // AGE / GRADE
+                    // =================================================
+
+                    Label {
+
+                        text: "Age " + age + "  •  " + grade
+
+                        color: "#8994AA"
+
+                        font.pixelSize: 9
+                    }
+
+                    // =================================================
+                    // STATUS
+                    // =================================================
+
+                    Rectangle {
+
+                        Layout.preferredWidth: 52
+
+                        Layout.preferredHeight: 18
+
+                        radius: 9
+
+                        color: "#E9F9EE"
+
+                        Label {
+
+                            anchors.centerIn: parent
+
+                            text: "● Active"
+
+                            color: "#28A66C"
+
+                            font.pixelSize: 8
+
+                            font.bold: true
+                        }
+                    }
+
+                    // =================================================
+                    // PROGRESS
+                    // =================================================
+
+                    RowLayout {
+
+                        Layout.fillWidth: true
+
+                        Label {
+
+                            text: "Progress"
+
+                            color: "#69758D"
+
+                            font.pixelSize: 9
+
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+
+                            text: progress + "%"
+
+                            color: "#674FD4"
+
+                            font.pixelSize: 10
+
+                            font.bold: true
+                        }
+                    }
+
+                    Rectangle {
+
+                        Layout.fillWidth: true
+
+                        height: 7
+
+                        radius: 3.5
+
+                        color: "#ECEAF3"
+
+                        Rectangle {
+
+                            width: parent.width * Math.max(0, Math.min(100, progress)) / 100
+
+                            height: parent.height
+
+                            radius: 3.5
+
+                            color: "#7C4DFF"
+                        }
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    // =================================================
+                    // DASHBOARD
+                    // =================================================
+
+                    Button {
+
+                        Layout.fillWidth: true
+
+                        Layout.preferredHeight: 34
+
+                        background: Rectangle {
+
+                            radius: 9
+
+                            color: "#F4F1FF"
+
+                            border.color: "#DED6FF"
+
+                            border.width: 1
+                        }
+
+                        contentItem: Label {
+
+                            text: "View Dashboard"
+
+                            color: "#684BD0"
+
+                            font.pixelSize: 10
+
+                            font.bold: true
+
+                            horizontalAlignment: Text.AlignHCenter
+
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        onClicked: {
+                            root.selectedChildIndex = index;
+
+                            root.viewProgressRequested(childId);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ================================================================
     // MAIN BACKGROUND
     // ================================================================
 
     Rectangle {
+
         anchors.fill: parent
 
         color: "#F8F9FE"
 
-        // Very subtle decoration.
+        // ============================================================
+        // DECORATION
+        // ============================================================
+
         Rectangle {
+
             width: 260
             height: 150
 
             radius: 75
 
             color: "#EEE9FF"
+
             opacity: 0.35
 
             anchors.left: parent.left
+
             anchors.bottom: parent.bottom
 
             anchors.leftMargin: -120
+
             anchors.bottomMargin: -90
         }
 
         Rectangle {
+
             width: 220
             height: 140
 
             radius: 70
 
             color: "#E8F5FF"
+
             opacity: 0.30
 
             anchors.right: parent.right
+
             anchors.bottom: parent.bottom
 
             anchors.rightMargin: -100
+
             anchors.bottomMargin: -80
         }
 
@@ -123,10 +807,12 @@ Item {
 
             anchors.fill: parent
 
-            // Small top spacing specifically for tablet.
             anchors.leftMargin: 28
+
             anchors.rightMargin: 28
+
             anchors.topMargin: 6
+
             anchors.bottomMargin: 10
 
             clip: true
@@ -152,7 +838,9 @@ Item {
                     spacing: 14
 
                     Image {
+
                         Layout.preferredWidth: 78
+
                         Layout.preferredHeight: 52
 
                         source: "qrc:/ui/images/dyxi_logo_42.png"
@@ -170,7 +858,7 @@ Item {
 
                         Label {
 
-                            text: "My Children"
+                            text: "My Ward"
 
                             color: "#202D50"
 
@@ -214,6 +902,7 @@ Item {
                                 color: "#FFFFFF"
 
                                 font.pixelSize: 19
+
                                 font.bold: true
                             }
 
@@ -224,6 +913,7 @@ Item {
                                 color: "#FFFFFF"
 
                                 font.pixelSize: 11
+
                                 font.bold: true
                             }
                         }
@@ -231,7 +921,7 @@ Item {
                         onClicked: {
                             root.addChildRequested();
 
-                            resetChildForm();
+                            root.resetChildForm();
 
                             addChildDialog.open();
                         }
@@ -261,6 +951,7 @@ Item {
                         anchors.fill: parent
 
                         anchors.leftMargin: 13
+
                         anchors.rightMargin: 13
 
                         spacing: 9
@@ -268,6 +959,7 @@ Item {
                         Rectangle {
 
                             Layout.preferredWidth: 32
+
                             Layout.preferredHeight: 32
 
                             radius: 16
@@ -288,7 +980,7 @@ Item {
 
                         Label {
 
-                            text: childrenModel.count + " registered " + (childrenModel.count === 1 ? "child" : "children")
+                            text: root.childrenLoading ? "Loading registered children..." : childrenModel.count - 1 + " registered " + (childrenModel.count - 1 === 1 ? "child" : "children")
 
                             color: "#34415D"
 
@@ -301,7 +993,7 @@ Item {
 
                         Label {
 
-                            text: "Select a profile to continue"
+                            text: root.childrenLoading ? "Please wait" : "Select a profile to continue"
 
                             color: "#929BB0"
 
@@ -314,441 +1006,131 @@ Item {
                 // CHILDREN GRID
                 // ====================================================
 
-                GridLayout {
-                    id: childGrid
+                Item {
+                    id: childrenArea
 
                     Layout.fillWidth: true
 
-                    columnSpacing: 12
+                    Layout.preferredHeight: Math.max(250, childrenGridView.contentHeight)
 
-                    rowSpacing: 12
+                    // =================================================
+                    // GRID
+                    // =================================================
 
-                    // Landscape tablet optimization.
-                    columns: width >= 1180 ? 5 : (width >= 880 ? 4 : (width >= 620 ? 3 : 1))
+                    GridView {
+                        id: childrenGridView
 
-                    Repeater {
+                        anchors.left: parent.left
 
-                        model: ListModel {
-                            id: childrenModel
+                        anchors.right: parent.right
 
-                            ListElement {
+                        anchors.top: parent.top
 
-                                childId: 101
+                        anchors.bottom: parent.bottom
 
-                                childName: "Amara Johnson"
+                        clip: true
 
-                                age: 9
+                        interactive: false
 
-                                grade: "Grade 4"
+                        model: childrenModel
 
-                                avatarColor: "#FFDDE7"
+                        property int columnCount: width >= 1180 ? 5 : width >= 880 ? 4 : width >= 620 ? 3 : 1
 
-                                avatarText: "A"
+                        cellWidth: width / columnCount
 
-                                progress: 72
-                            }
+                        cellHeight: 244
 
-                            ListElement {
-
-                                childId: 102
-
-                                childName: "Daniel Johnson"
-
-                                age: 11
-
-                                grade: "Grade 6"
-
-                                avatarColor: "#DDF2FF"
-
-                                avatarText: "D"
-
-                                progress: 85
-                            }
-
-                            ListElement {
-
-                                childId: 103
-
-                                childName: "Maya Johnson"
-
-                                age: 7
-
-                                grade: "Grade 2"
-
-                                avatarColor: "#FFF0CF"
-
-                                avatarText: "M"
-
-                                progress: 64
-                            }
-
-                            ListElement {
-
-                                childId: 104
-
-                                childName: "David Johnson"
-
-                                age: 9
-
-                                grade: "Grade 4"
-
-                                avatarColor: "#DDF4DD"
-
-                                avatarText: "D"
-
-                                progress: 91
-                            }
-                        }
-
-                        delegate: Rectangle {
-                            id: childTile
-
-                            Layout.fillWidth: true
-
-                            Layout.preferredHeight: 232
-
-                            radius: 17
-
-                            color: "#FFFFFF"
-
-                            border.color: root.selectedChildIndex === index ? "#8A6CFF" : "#E4E8F2"
-
-                            border.width: root.selectedChildIndex === index ? 2 : 1
-
-                            MouseArea {
-
-                                anchors.fill: parent
-
-                                onClicked: {
-                                    root.selectedChildIndex = index;
-
-                                    root.childSelected(childId, childName);
-                                }
-                            }
-
-                            ColumnLayout {
-
-                                anchors.fill: parent
-
-                                anchors.margins: 13
-
-                                spacing: 6
-
-                                // --------------------------------
-                                // AVATAR
-                                // --------------------------------
-
-                                RowLayout {
-
-                                    Layout.fillWidth: true
-
-                                    Rectangle {
-
-                                        Layout.preferredWidth: 56
-
-                                        Layout.preferredHeight: 56
-
-                                        radius: 28
-
-                                        color: avatarColor
-
-                                        Label {
-
-                                            anchors.centerIn: parent
-
-                                            text: avatarText
-
-                                            color: "#4F4770"
-
-                                            font.pixelSize: 22
-
-                                            font.bold: true
-                                        }
-
-                                        Rectangle {
-
-                                            width: 12
-
-                                            height: 12
-
-                                            radius: 6
-
-                                            color: "#48C985"
-
-                                            border.color: "#FFFFFF"
-
-                                            border.width: 2
-
-                                            anchors.right: parent.right
-
-                                            anchors.bottom: parent.bottom
-                                        }
-                                    }
-
-                                    Item {
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Button {
-
-                                        Layout.preferredWidth: 28
-
-                                        Layout.preferredHeight: 28
-
-                                        background: Rectangle {
-
-                                            radius: 8
-
-                                            color: "#F6F4FF"
-                                        }
-
-                                        contentItem: Label {
-
-                                            text: "⋮"
-
-                                            color: "#7660D9"
-
-                                            font.pixelSize: 17
-
-                                            horizontalAlignment: Text.AlignHCenter
-
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-
-                                        onClicked: root.manageChildRequested(childId)
-                                    }
-                                }
-
-                                Label {
-
-                                    text: childName
-
-                                    color: "#202D50"
-
-                                    font.pixelSize: 13
-
-                                    font.bold: true
-
-                                    Layout.fillWidth: true
-
-                                    elide: Text.ElideRight
-                                }
-
-                                Label {
-
-                                    text: "Age " + age + "  •  " + grade
-
-                                    color: "#8994AA"
-
-                                    font.pixelSize: 9
-                                }
-
-                                Rectangle {
-
-                                    Layout.preferredWidth: 52
-
-                                    Layout.preferredHeight: 18
-
-                                    radius: 9
-
-                                    color: "#E9F9EE"
-
-                                    Label {
-
-                                        anchors.centerIn: parent
-
-                                        text: "● Active"
-
-                                        color: "#28A66C"
-
-                                        font.pixelSize: 8
-
-                                        font.bold: true
-                                    }
-                                }
-
-                                RowLayout {
-
-                                    Layout.fillWidth: true
-
-                                    Label {
-
-                                        text: "Progress"
-
-                                        color: "#69758D"
-
-                                        font.pixelSize: 9
-
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Label {
-
-                                        text: progress + "%"
-
-                                        color: "#674FD4"
-
-                                        font.pixelSize: 10
-
-                                        font.bold: true
-                                    }
-                                }
-
-                                Rectangle {
-
-                                    Layout.fillWidth: true
-
-                                    height: 7
-
-                                    radius: 3.5
-
-                                    color: "#ECEAF3"
-
-                                    Rectangle {
-
-                                        width: parent.width * progress / 100
-
-                                        height: parent.height
-
-                                        radius: 3.5
-
-                                        color: "#7C4DFF"
-                                    }
-                                }
-
-                                Item {
-                                    Layout.fillHeight: true
-                                }
-
-                                Button {
-
-                                    Layout.fillWidth: true
-
-                                    Layout.preferredHeight: 34
-
-                                    background: Rectangle {
-
-                                        radius: 9
-
-                                        color: "#F4F1FF"
-
-                                        border.color: "#DED6FF"
-
-                                        border.width: 1
-                                    }
-
-                                    contentItem: Label {
-
-                                        text: "View Dashboard"
-
-                                        color: "#684BD0"
-
-                                        font.pixelSize: 10
-
-                                        font.bold: true
-
-                                        horizontalAlignment: Text.AlignHCenter
-
-                                        verticalAlignment: Text.AlignVCenter
-                                    }
-
-                                    onClicked: {
-                                        root.selectedChildIndex = index;
-
-                                        root.viewProgressRequested(childId);
-                                    }
-                                }
-                            }
-                        }
+                        delegate: delegateComponent
                     }
 
                     // =================================================
-                    // ADD CHILD TILE
+                    // ERROR MESSAGE
                     // =================================================
 
                     Rectangle {
+                        id: errorOverlay
 
-                        Layout.fillWidth: true
+                        anchors.fill: parent
 
-                        Layout.preferredHeight: 232
+                        visible: !root.childrenLoading && !root.childrenLoaded && root.childrenError.length > 0
+
+                        color: "#FFFFFF"
 
                         radius: 17
 
-                        color: "#FCFAFF"
-
-                        border.color: "#D9D0FF"
+                        border.color: "#F0D8DE"
 
                         border.width: 1
 
-                        MouseArea {
+                        /*
+                         * Keep the Add Child tile clickable.
+                         * The error panel is only shown in the
+                         * unused area if there is an error.
+                         */
 
-                            anchors.fill: parent
-
-                            onClicked: {
-                                root.addChildRequested();
-
-                                resetChildForm();
-
-                                addChildDialog.open();
-                            }
-                        }
-
-                        ColumnLayout {
+                        Column {
 
                             anchors.centerIn: parent
 
-                            spacing: 7
-
-                            Rectangle {
-
-                                Layout.alignment: Qt.AlignHCenter
-
-                                Layout.preferredWidth: 46
-
-                                Layout.preferredHeight: 46
-
-                                radius: 23
-
-                                color: "#EEE AFF".replace(" ", "")
-
-                                Label {
-
-                                    anchors.centerIn: parent
-
-                                    text: "+"
-
-                                    color: "#7658DC"
-
-                                    font.pixelSize: 25
-
-                                    font.bold: true
-                                }
-                            }
+                            spacing: 10
 
                             Label {
 
-                                text: "Add Child"
+                                text: "Unable to load profiles"
 
-                                color: "#634AC9"
+                                color: "#D94B61"
 
                                 font.pixelSize: 12
 
                                 font.bold: true
 
-                                Layout.alignment: Qt.AlignHCenter
+                                anchors.horizontalCenter: parent.horizontalCenter
                             }
 
                             Label {
 
-                                text: "Register another\nchild profile"
+                                text: root.childrenError
 
-                                color: "#929BB0"
+                                color: "#8994AA"
 
                                 font.pixelSize: 9
 
-                                horizontalAlignment: Text.AlignHCenter
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
 
-                                Layout.alignment: Qt.AlignHCenter
+                            Button {
+
+                                width: 110
+
+                                height: 34
+
+                                anchors.horizontalCenter: parent.horizontalCenter
+
+                                background: Rectangle {
+
+                                    radius: 9
+
+                                    color: "#7C4DFF"
+                                }
+
+                                contentItem: Label {
+
+                                    text: "Try Again"
+
+                                    color: "#FFFFFF"
+
+                                    font.pixelSize: 10
+
+                                    font.bold: true
+
+                                    horizontalAlignment: Text.AlignHCenter
+
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                onClicked: {
+                                    root.loadChildren();
+                                }
                             }
                         }
                     }
@@ -795,9 +1177,9 @@ Item {
 
             spacing: 13
 
-            // ========================================================
+            // ====================================================
             // MODAL HEADER
-            // ========================================================
+            // ====================================================
 
             RowLayout {
 
@@ -860,9 +1242,9 @@ Item {
                 }
             }
 
-            // ========================================================
+            // ====================================================
             // FULL NAME
-            // ========================================================
+            // ====================================================
 
             ColumnLayout {
 
@@ -909,9 +1291,9 @@ Item {
                 }
             }
 
-            // ========================================================
+            // ====================================================
             // DATE OF BIRTH
-            // ========================================================
+            // ====================================================
 
             ColumnLayout {
 
@@ -936,9 +1318,9 @@ Item {
 
                     spacing: 8
 
-                    // ------------------------------------------------
+                    // =================================================
                     // DAY
-                    // ------------------------------------------------
+                    // =================================================
 
                     ComboBox {
                         id: dayCombo
@@ -967,9 +1349,9 @@ Item {
                         }
                     }
 
-                    // ------------------------------------------------
+                    // =================================================
                     // MONTH
-                    // ------------------------------------------------
+                    // =================================================
 
                     ComboBox {
                         id: monthCombo
@@ -998,9 +1380,9 @@ Item {
                         }
                     }
 
-                    // ------------------------------------------------
-                    // YEAR - PROGRAMMATICALLY GENERATED
-                    // ------------------------------------------------
+                    // =================================================
+                    // YEAR
+                    // =================================================
 
                     ComboBox {
                         id: yearCombo
@@ -1032,16 +1414,6 @@ Item {
 
                         Component.onCompleted: {
                             birthYearModel.clear();
-
-                            /*
-                                  Current year = 2026
-
-                                  Youngest selectable year:
-                                      2026 - 15 = 2011
-
-                                  The model then continues backwards
-                                  for 100 years.
-                                */
 
                             for (var i = 0; i < birthYearCount; i++) {
                                 birthYearModel.append({
@@ -1076,9 +1448,9 @@ Item {
                     }
                 }
 
-                // ----------------------------------------------------
-                // SELECTED DATE PREVIEW
-                // ----------------------------------------------------
+                // =================================================
+                // DATE PREVIEW
+                // =================================================
 
                 Rectangle {
 
@@ -1107,9 +1479,9 @@ Item {
                 }
             }
 
-            // ========================================================
+            // ====================================================
             // GENDER
-            // ========================================================
+            // ====================================================
 
             ColumnLayout {
 
@@ -1156,9 +1528,9 @@ Item {
                 }
             }
 
-            // ========================================================
-            // ERROR MESSAGE
-            // ========================================================
+            // ====================================================
+            // ERROR
+            // ====================================================
 
             Label {
                 id: formError
@@ -1180,15 +1552,19 @@ Item {
                 Layout.fillHeight: true
             }
 
-            // ========================================================
+            // ====================================================
             // BUTTONS
-            // ========================================================
+            // ====================================================
 
             RowLayout {
 
                 Layout.fillWidth: true
 
                 spacing: 10
+
+                // =================================================
+                // CANCEL
+                // =================================================
 
                 Button {
 
@@ -1225,6 +1601,10 @@ Item {
                     }
                 }
 
+                // =================================================
+                // REGISTER
+                // =================================================
+
                 Button {
                     id: submitChildButton
 
@@ -1256,9 +1636,9 @@ Item {
 
                     onClicked: {
 
-                        // ==========================================
-                        // EXTRACT FORM VALUES
-                        // ==========================================
+                        // =========================================
+                        // VALUES
+                        // =========================================
 
                         var fullName = fullNameField.text.trim();
 
@@ -1266,9 +1646,9 @@ Item {
 
                         var gender = genderCombo.currentIndex >= 0 ? genderCombo.currentText : "";
 
-                        // ==========================================
+                        // =========================================
                         // VALIDATION
-                        // ==========================================
+                        // =========================================
 
                         if (fullName.length === 0) {
                             formError.text = "Please enter the child's full name.";
@@ -1292,42 +1672,25 @@ Item {
                             return;
                         }
 
-                        // ==========================================
-                        // SEND TO C++ / VIEWMODEL
-                        // ==========================================
+                        // =========================================
+                        // SEND TO C++
+                        // =========================================
 
                         root.childRegistrationSubmitted(fullName, dateOfBirth, gender);
 
-                        // ==========================================
-                        // REFRESH LOCAL UI
-                        //
-                        // Replace this section with the API response
-                        // in production.
-                        // ==========================================
-
-                        var firstLetter = fullName.charAt(0).toUpperCase();
-
-                        childrenModel.append({
-                            childId: Date.now(),
-                            childName: fullName,
-                            age: 0,
-                            grade: "New Child",
-                            avatarColor: "#E8E0FF",
-                            avatarText: firstLetter,
-                            progress: 0
-                        });
-
-                        // ==========================================
-                        // RESET FORM
-                        // ==========================================
+                        /*
+                             * Do not add a fake child locally.
+                             *
+                             * Once C++ completes registration,
+                             * reloadChildren() can retrieve the
+                             * authoritative server data.
+                             */
 
                         resetChildForm();
 
-                        // ==========================================
-                        // CLOSE MODAL
-                        // ==========================================
-
                         addChildDialog.close();
+
+                        root.loadChildren();
                     }
                 }
             }
