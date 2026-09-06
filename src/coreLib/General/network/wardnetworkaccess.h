@@ -11,6 +11,7 @@
 #include <QVariantMap>
 #include <QQmlEngine>
 #include <QNetworkAccessManager>
+#include "authservices.h"
 // #include "jwtaccessor.h"
 
 class WardNetworkAccess : public AbstractErrorProcessing
@@ -34,6 +35,8 @@ public:
     void setIsLoadedData(bool newIsLoadedData);
     QVariantList wardList() const;
 
+
+
 signals:
      void isLoadedDataChanged();
     void childrenLoaded(const QVariantList &children);
@@ -47,9 +50,10 @@ private :
     bool m_isLoadingData;
     QNetworkAccessManager *manager;
     // JwtAccessor *tokenManager;
+    OAuth::AuthServices *m_authServices;
 
-    QVariantList m_warditemList;
-    void setWardItemList(QVariantList item);
+    QVariantList m_wardList;
+    void setWardList(QVariantList item);
 };
 
 #endif // WARDNETWORKACCESS_H

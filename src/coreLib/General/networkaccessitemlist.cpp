@@ -66,32 +66,6 @@ void NetworkAccessItemList::onGetItemGameTypeFinished(QNetworkReply *reply)
                         QVariantList variantList = data.toList();
 
 
-                        //  convert to variant list
-                        // QVariantList variantList = jsonArray.toVariantList();
-
-                        // QList<QVariantMap> variantMapList;
-                        // qInfo() << "VariantMap";
-                        // foreach (const QVariant& variant, variantList) {
-                        //     if (variant.canConvert<QVariantMap>()) {
-                        //         variantMapList.append(variant.toMap());
-                        //         // setItemGameType(variantMapList);
-                        //     } else {
-                        //         //TODO  throw error if converting from and log error
-                        //         qWarning() << "QVariant is not a QVariantMap, skipping.";
-                        //         emit requestFailed("Data Conversion Error");
-                        //     }
-                        // }
-
-                        // int index = 0;
-                        // for (const QVariant &v : variantList) {
-                        //     // v.toString() works for many types, or use switch(v.userType())
-                        //     qDebug() << "Item" << index++ << ":" << v.value<QMap>;
-
-                        //     // If the item is another list or map, handle it recursively
-                        //     if (v.canConvert<QVariantList>()) {
-                        //         qDebug() << "Nested List:" << v.toList();
-                        //     }
-                        // }
 
                         // setItemGameType
                         setItemGameType(variantList);

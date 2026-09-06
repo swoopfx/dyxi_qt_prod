@@ -73,6 +73,11 @@ class AuthServices final : public QObject
                    READ userId
                        NOTIFY profileUpdated)
 
+
+    Q_PROPERTY(QString token READ keyToken WRITE setKeyToken NOTIFY tokenChanged FINAL)
+    Q_PROPERTY(QString refreshToken READ keyRefreshToken WRITE setKeyRefreshToken NOTIFY refreshTokenChanged FINAL)
+
+
 public:
 
     explicit AuthServices(QObject *parent = nullptr);
@@ -101,6 +106,19 @@ public:
 
     Q_INVOKABLE void signOut();
 
+    // Token processing
+    void retrieveKeyToken();
+    void retriveKeyRefreshToken();
+
+    QString keyToken() const;
+    void setKeyToken(const QString &newKeyToken);
+
+    QString keyRefreshToken() const;
+    void setKeyRefreshToken(const QString &newKeyRefreshToken);
+
+    QString token() const;
+    void setToken(const QString &newToken);
+
 signals:
 
     void statusTextChanged();
@@ -117,6 +135,10 @@ signals:
     void rawLog(
         const QString &message,
         const QString &level);
+
+    void tokenChanged();
+
+    void refreshTokenChanged();
 
 private:
 
@@ -304,11 +326,21 @@ private:
 
 
 
+
+
+ // Token
+    QString m_keyToken;
+    QString m_keyRefreshToken;
+
+
+
+
     // void sendGoogleAuthorizationCode(
     //     const QString &code,
     //     const QString &redirectUri,
     //     const QString &codeVerifier);
 
+    QString m_token;
 };
 
 }

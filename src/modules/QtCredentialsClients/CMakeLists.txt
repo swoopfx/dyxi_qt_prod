@@ -32,7 +32,7 @@ qt_add_qml_module(QtCredentialsClients
         Login.qml
         WelcomePage.qml
         SOURCES authservices.h authservices.cpp
-        SOURCES jwtaccessor.h jwtaccessor.cpp
+
 )
 
 # Link platform libraries for clean runtime executions

@@ -1353,6 +1353,76 @@ void AuthServices::signOut()
         });
 }
 
+void AuthServices::retrieveKeyToken()
+{
+    auto *job =
+        new QKeychain::ReadPasswordJob(
+            QStringLiteral(
+                "QtCredentialsClient"),
+            this);
+
+    job->setKey(
+        QString::fromUtf8(
+            "session_access_token"));
+
+    connect(
+        job,
+        &QKeychain::ReadPasswordJob::finished,
+        this,
+        [this, job]() {
+
+            const bool failed = job->error();
+
+            const QString token =job->textData();
+
+
+
+            if (!failed && !token.isEmpty()) {
+
+                setKeyToken(token);
+
+            }
+
+
+
+            job->deleteLater();
+        });
+}
+
+void AuthServices::retriveKeyRefreshToken()
+{
+    auto *job =
+        new QKeychain::ReadPasswordJob(
+            QStringLiteral(
+                "QtCredentialsClient"),
+            this);
+
+    job->setKey(
+        QString::fromUtf8(
+            "session_refresh_token"));
+
+    connect(
+        job,
+        &QKeychain::ReadPasswordJob::finished,
+        this,
+        [this, job]() {
+
+            const bool failed = job->error();
+
+            const QString token =job->textData();
+
+
+
+            if (!failed && !token.isEmpty()) {
+
+                setKeyRefreshToken(token);
+
+            }
+
+            job->deleteLater();
+        });
+}
+
 void AuthServices::clearSessionState()
 {
     m_sessionToken.clear();
@@ -1472,4 +1542,34 @@ QString AuthServices::generateOAuthState()
             .toBase64(QByteArray::Base64UrlEncoding |
                       QByteArray::OmitTrailingEquals));
 }
+
+QString AuthServices::keyRefreshToken() const
+{
+    return m_keyRefreshToken;
+}
+
+void AuthServices::setKeyRefreshToken(const QString &newKeyRefreshToken)
+{
+
+    if ( m_keyRefreshToken == newKeyRefreshToken)
+        return;
+    m_keyRefreshToken= newKeyRefreshToken;
+    emit refreshTokenChanged();
+}
+
+QString AuthServices::keyToken() const
+{
+    return m_keyToken;
+}
+
+
+
+void AuthServices::setKeyToken(const QString &newToken)
+{
+    if (m_keyToken == newToken)
+        return;
+    m_keyToken = newToken;
+    emit tokenChanged();
+}
+
 }
